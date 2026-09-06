@@ -31,7 +31,11 @@ jobs:
               git -C application rev-parse HEAD
 
           - name: scan for Application Secrets
-            uses: gitleaks/gitleaks-action@v2
-
-            env:
-            GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+            run: |
+              docker run -run \
+              | -v "${GITHUB_WORKSPACE}/application:/repo" \
+              ghcr.io/gitleaks/gitleaks:v8.301 \
+              detect \
+              -- source=/repo\
+              --no-banner \
+              --exit-code 1
