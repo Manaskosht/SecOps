@@ -50,7 +50,7 @@ jobs:
             --no-banner \
             --report-format json \
             --report-path /repo/gitleaks-report.json \
-            --exit-code 1
+            --exit-code 0
 
       # --------------------------------------------------------
       # Show Findings
@@ -62,18 +62,58 @@ jobs:
           echo "====================================="
 
           if [ -f "application/gitleaks-report.json" ]; then
-            jq -r '
-              .[] |
-              "File: \(.File)\nLine: \(.StartLine)\nRule: \(.RuleID)\nCommit: \(.Commit // "N/A")\n---"
-            ' application/gitleaks-report.json
+
+            FINDINGS=$(jq 'length' application/gitleaks-report.json)
+
+            echo "Total findings: $FINDINGS"
+            echo ""
+
+            if [ "$FINDINGS" -gt 0 ]; then
+              jq -r '
+                .[] |
+                "File: \(.File)\nLine: \(.StartLine)\nEnd Line: \(.EndLine)\nRule: \(.RuleID)\nDescription: \(.Description)\nCommit: \(.Commit // "N/A")\n---"
+              ' application/gitleaks-report.json
+            else
+              echo "No secrets found."
+            fi
+
           else
             echo "No Gitleaks report found."
           fi
 
       # --------------------------------------------------------
+      # Fail Pipeline If Secret Is Found
+      # --------------------------------------------------------
+      - name: Step 3 - Enforce Secret Security Gate
+        run: |
+          if [ ! -f "application/gitleaks-report.json" ]; then
+            echo "ERROR: Gitleaks report was not generated."
+            exit 1
+          fi
+
+          FINDINGS=$(jq 'length' application/gitleaks-report.json)
+
+          echo "Gitleaks findings count: $FINDINGS"
+
+          if [ "$FINDINGS" -gt 0 ]; then
+            echo ""
+            echo "====================================="
+            echo "SECURITY GATE FAILED"
+            echo "Secrets were detected in the application."
+            echo "Remove the secret and push a new commit."
+            echo "====================================="
+            exit 1
+          fi
+
+          echo "====================================="
+          echo "SECURITY GATE PASSED"
+          echo "No secrets detected."
+          echo "====================================="
+
+      # --------------------------------------------------------
       # List Scanned Files
       # --------------------------------------------------------
-      - name: Step 3 - List Scanned Files
+      - name: Step 4 - List Scanned Files
         if: always()
         run: |
           echo "Files Inside Gitleaks Scanning Scope:"
