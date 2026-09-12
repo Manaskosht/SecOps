@@ -139,19 +139,15 @@ jobs:
 
       - name: Verify SonarQube Report
         run: |
-          echo "Checking SonarQube scanner report..."
-          echo "Workspace: $GITHUB_WORKSPACE"
-          echo "-------------------------------------"
-          ls -lah application/backend/.scannerwork/ || true
-          echo "-------------------------------------"
-          if [ -f application/backend/.scannerwork/report-task.txt ]; then
-            echo "report-task.txt FOUND"
-            cat application/backend/.scannerwork/report-task.txt
-          else
-            echo "ERROR: report-task.txt NOT FOUND"
-            exit 1
-          fi
-            - name: SonarQube Quality Gate
+          echo "Current directory:"
+          pwd
+
+          echo "Checking backend scanner directory:"
+          ls -lah application/backend/.scannerwork/
+
+          echo "Checking report:"
+          cat application/backend/.scannerwork/report-task.txt
+      - name: SonarQube Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         with:
