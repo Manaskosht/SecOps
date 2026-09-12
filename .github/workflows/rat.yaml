@@ -96,9 +96,9 @@ jobs:
 
       - name: Wait for Local SonarQube Server to be Ready
         run: |
-          echo "Checking SonarQube server availability at http://localhost:9000 ..."
+          echo "Checking SonarQube server availability at http://3.230.6.56:9000/ ..."
           for i in $(seq 1 30); do
-            STATUS=$(curl -s http://localhost:9000/api/system/status | grep -o '"status":"[A-Z]*"' || echo "")
+            STATUS=$(curl -s http://3.230.6.56:9000/api/system/status | grep -o '"status":"[A-Z]*"' || echo "")
             echo "Attempt $i: $STATUS"
             if echo "$STATUS" | grep -q "UP"; then
               echo "SonarQube is UP."
@@ -109,19 +109,19 @@ jobs:
           echo "SonarQube did not become ready in time."
           exit 1
 
-      - name: Scan Backend Code
+      - name: Scan Backend Code and Wait for Quality Gate
         run: |
           docker run --rm \
             --network host \
             -v "${GITHUB_WORKSPACE}/application/backend:/usr/src" \
-            -v "${GITHUB_WORKSPACE}/application/backend/.scannerwork:/usr/src/.scannerwork" \
             sonarsource/sonar-scanner-cli:latest \
             -Dsonar.projectKey=hireflow-backend \
             -Dsonar.projectName=hireflow-backend \
             -Dsonar.sources=/usr/src \
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/** \
-            -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.host.url=http://3.230.6.56:9000/ \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.qualitygate.wait=true
 
       # Uncomment once frontend testing begins
       # - name: Scan Frontend Code
@@ -137,32 +137,13 @@ jobs:
       #       -Dsonar.host.url=http://localhost:9000 \
       #       -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
-      - name: Verify SonarQube Report
-        run: |
-          echo "Current directory:"
-          pwd
-
-          echo "Checking backend scanner directory:"
-          ls -lah application/backend/.scannerwork/
-
-          echo "Checking report:"
-          cat application/backend/.scannerwork/report-task.txt
-      - name: SonarQube Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        with:
-          scanMetadataReportFile: application/backend/.scannerwork/report-task.txt
-          pollingTimeoutSec: 300
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: http://localhost:9000
       - name: Show SonarQube Dashboard Links
         if: always()
         run: |
           echo "====================================="
           echo "SonarQube Analysis Complete"
           echo "====================================="
-          echo "Backend Dashboard:  http://localhost:9000/dashboard?id=hireflow-backend"
+          echo "Backend Dashboard:  http://3.230.6.56:9000/dashboard?id=hireflow-backend"
 
   # Stage 3 : Dependency Scanning
   trivy-deps:
