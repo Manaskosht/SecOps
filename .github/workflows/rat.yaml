@@ -136,12 +136,19 @@ jobs:
       #       -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/** \
       #       -Dsonar.host.url=http://localhost:9000 \
       #       -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+      - name: Verify SonarQube Report
+        run: |
+          echo "Checking scanner report..."
+          ls -lah application/backend/.scannerwork/
+          echo "====================================="
+          cat application/backend/.scannerwork/report-task.txt
       - name: SonarQube Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         with:
-          scanMetadataReportPath: application/backend/.scannerwork/report-task.txt
-          pollingtimeout: 300
+          scanMetadataReportFile: application/backend/.scannerwork/report-task.txt
+          pollingTimeoutSec: 300
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: http://localhost:9000
