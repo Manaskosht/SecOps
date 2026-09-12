@@ -151,7 +151,7 @@ jobs:
             echo "ERROR: report-task.txt NOT FOUND"
             exit 1
           fi
-      - name: SonarQube Quality Gate
+            - name: SonarQube Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         with:
